@@ -1,4 +1,4 @@
-package scraper
+package scrap
 
 import (
 	"code.google.com/p/go.net/html"
