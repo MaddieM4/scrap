@@ -21,6 +21,7 @@ _testmain.go
 
 *.exe
 *.test
+scrap
 
 # Vim .swpfiles
 *.swp
