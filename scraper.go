@@ -17,10 +17,10 @@ type Scraper struct {
 	wg      *sync.WaitGroup
 }
 
-func New(max_queued int) Scraper {
+func NewScraper() Scraper {
 	return Scraper{
 		routes:  make([]Route, 0),
-		remarks: make(chan string, max_queued),
+		remarks: make(chan string, 100),
 		seen:    make(map[string]bool),
 		wg:      new(sync.WaitGroup),
 	}
