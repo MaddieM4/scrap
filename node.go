@@ -24,4 +24,9 @@ func (n *Node) Find(sel string) NodeSet {
 
 // Queue this node's 'href' attr value as a URL to scrape.
 func (n Node) Queue() {
+	nodes := NodeSet{n}
+	href := nodes.Attr("href")
+	if len(href) == 1 {
+		n.req.QueueAnother(href[0])
+	}
 }

@@ -85,5 +85,42 @@ func TestNode_Find_BadSelector(t *testing.T) {
 
 func TestNode_Queue_NoHref(t *testing.T) {
 	n := setupNode(t)
+	rq := n.req.RequestQueue
+
 	n.Find("body").Queue()
+	queued := rq.(*TestRQ).Queued
+	if len(queued) != 0 {
+		t.Fatal("Queue should be empty")
+	}
+}
+
+func TestNode_Queue_WithHref(t *testing.T) {
+	n := setupNode(t)
+	rq := n.req.RequestQueue
+
+	n.Find("link").Queue()
+	queued := rq.(*TestRQ).Queued
+	if len(queued) != 1 {
+		t.Fatal("Queue should have one item")
+	}
+	queued_item := queued[0]
+	compare(t, "/blah/", queued_item.Url)
+	compare(t, rq, queued_item.RequestQueue)
+}
+
+func TestNode_Queue_Multiple(t *testing.T) {
+	n := setupNode(t)
+	rq := n.req.RequestQueue
+
+	n.Find("a").Queue()
+	queued := rq.(*TestRQ).Queued
+	if len(queued) != 3 {
+		t.Fatal("Queue should have three items")
+	}
+	expected_urls := []string{"/first", "/second", "/third"}
+	for i, url := range expected_urls {
+		queued_item := queued[i]
+		compare(t, url, queued_item.Url)
+		compare(t, rq, queued_item.RequestQueue)
+	}
 }
