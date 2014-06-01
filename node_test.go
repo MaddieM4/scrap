@@ -1,7 +1,9 @@
 package scrap
 
 import (
+	"bytes"
 	"code.google.com/p/go.net/html"
+	"log"
 	"reflect"
 	"strings"
 	"testing"
@@ -24,12 +26,35 @@ var sample_html = `
     </body>
 </html>`
 
-func setup(t *testing.T) Node {
-	scraper := NewScraper()
-	request := ScraperRequest{
-		Url:     "foo",
-		scraper: &scraper,
+type TestRQ struct {
+	Remarks *bytes.Buffer
+	Debug   *bytes.Buffer
+	Queued  []ScraperRequest
+}
+
+func NewTestRQ() *TestRQ {
+	trq := new(TestRQ)
+	trq.Remarks = new(bytes.Buffer)
+	trq.Debug = new(bytes.Buffer)
+	trq.Queued = make([]ScraperRequest, 0)
+	return trq
+}
+func (trq *TestRQ) CreateRequest(url string) ScraperRequest {
+	return ScraperRequest{
+		Url:          url,
+		RequestQueue: trq,
+		Remarks:      log.New(trq.Remarks, url+": ", 0),
+		Debug:        log.New(trq.Debug, url+": ", 0),
 	}
+}
+func (trq *TestRQ) DoRequest(req ScraperRequest) {
+	trq.Queued = append(trq.Queued, req)
+}
+
+func setupNode(t *testing.T) Node {
+	trq := NewTestRQ()
+	request := trq.CreateRequest("foo")
+
 	raw_node, err := html.Parse(strings.NewReader(sample_html))
 	if err != nil {
 		t.Fatal(err)
@@ -38,8 +63,14 @@ func setup(t *testing.T) Node {
 	return Node{raw_node, &request}
 }
 
+func compare(t *testing.T, expected, got interface{}) {
+	if !reflect.DeepEqual(expected, got) {
+		t.Fatalf("Expected %#v, got %#v", expected, got)
+	}
+}
+
 func TestNode_Find_NoSuchElement(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	found := n.Find("blah")
 	if len(found) != 0 {
 		t.Fatalf("Slice should have 0 elements, has %d!", len(found))
@@ -47,7 +78,7 @@ func TestNode_Find_NoSuchElement(t *testing.T) {
 }
 
 func TestNode_Find_OneElement(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	tagname := "body"
 	found := n.Find(tagname)
 	if len(found) != 1 {
@@ -67,7 +98,7 @@ func TestNode_Find_OneElement(t *testing.T) {
 }
 
 func TestNode_Find_MultipleElements(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	tagname := "p"
 	found := n.Find(tagname)
 	if len(found) != 3 {
@@ -85,41 +116,26 @@ func TestNode_Find_MultipleElements(t *testing.T) {
 }
 
 func TestNode_Find_BadSelector(t *testing.T) {
-	n := setup(t)
-	scraper := n.req.scraper
-	scraper.Debug = false
+	n := setupNode(t)
+	rq := n.req.RequestQueue
 	selector := "*&{"
 
 	found := n.Find(selector)
 	if len(found) != 0 {
 		t.Fatalf("Slice should have 0 elements, has %d!", len(found))
 	}
-	if len(scraper.remarks) != 0 {
-		t.Fatalf("Should have 0 remarks, has %d", len(scraper.remarks))
-	}
 
-	scraper.Debug = true
-	found = n.Find(selector)
-	if len(found) != 0 {
-		t.Fatalf("Slice should have 0 elements, has %d!", len(found))
-	}
-	if len(scraper.remarks) != 1 {
-		t.Fatalf("Should have 1 remark, has %d", len(scraper.remarks))
-	}
+	expected_remarks := ""
+	expected_debug := "foo: End of Selector\n"
+	got_remarks := rq.(*TestRQ).Remarks.String()
+	got_debug := rq.(*TestRQ).Debug.String()
 
-	err_remark := <-scraper.remarks
-	expected_remark := "foo: End of Selector"
-	if err_remark != expected_remark {
-		t.Fatalf(
-			"Expected error: \"%s\"\n\nGot error: \"%s\"",
-			expected_remark,
-			err_remark,
-		)
-	}
+	compare(t, expected_remarks, got_remarks)
+	compare(t, expected_debug, got_debug)
 }
 
 func TestNode_Attr_NoElements(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	attrs := n.Find("foo").Attr("bar")
 	if len(attrs) != 0 {
 		t.Fatalf("Should have 0 results, got %d", len(attrs))
@@ -127,7 +143,7 @@ func TestNode_Attr_NoElements(t *testing.T) {
 }
 
 func TestNode_Attr_ElementsButNoAttr(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	attrs := n.Find("p").Attr("bar")
 	if len(attrs) != 0 {
 		t.Fatalf("Should have 0 results, got %d", len(attrs))
@@ -136,7 +152,7 @@ func TestNode_Attr_ElementsButNoAttr(t *testing.T) {
 
 // Should only ever return one result for each element
 func TestNode_Attr_OneElementMultipleAttrs(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	attrs := n.Find("link").Attr("rel")
 	if len(attrs) != 1 {
 		t.Fatalf("Should have 1 results, got %d", len(attrs))
@@ -151,7 +167,7 @@ func TestNode_Attr_OneElementMultipleAttrs(t *testing.T) {
 }
 
 func TestNode_Attr_OneElementMultipleAttrsFiltered(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	attrs := n.Find("link").Attr("href")
 	if len(attrs) != 1 {
 		t.Fatalf("Should have 1 results, got %d", len(attrs))
@@ -165,7 +181,7 @@ func TestNode_Attr_OneElementMultipleAttrsFiltered(t *testing.T) {
 }
 
 func TestNode_Attr_MultipleElements(t *testing.T) {
-	n := setup(t)
+	n := setupNode(t)
 	attrs := n.Find("a").Attr("href")
 	expected := []string{
 		"/first",
@@ -175,4 +191,9 @@ func TestNode_Attr_MultipleElements(t *testing.T) {
 	if !reflect.DeepEqual(attrs, expected) {
 		t.Fatalf("Expected %s, got %s", expected, attrs)
 	}
+}
+
+func TestNode_Queue_NoHref(t *testing.T) {
+	n := setupNode(t)
+	n.Find("body").Queue()
 }

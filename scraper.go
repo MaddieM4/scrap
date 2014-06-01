@@ -3,7 +3,11 @@ package scrap
 import (
 	"code.google.com/p/go.net/html"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"sync"
 )
 
@@ -27,7 +31,7 @@ func NewScraper() Scraper {
 }
 
 func (s *Scraper) Run() {
-	s.NewRequest(s.StartingUrl)
+	s.DoRequest(s.CreateRequest(s.StartingUrl))
 	done_with_remarks := make(chan int)
 
 	go func() {
@@ -46,46 +50,56 @@ func (s *Scraper) Run() {
 	<-done_with_remarks // Wait for all remarks to print
 }
 
-func (s *Scraper) NewRequest(url string) {
-	if s.seen[url] {
+func (s *Scraper) CreateRequest(url string) ScraperRequest {
+	var debug_writer io.Writer
+	if s.Debug {
+		debug_writer = os.Stderr
+	} else {
+		debug_writer = ioutil.Discard
+	}
+	return ScraperRequest{
+		Url:          url,
+		RequestQueue: s,
+		Remarks:      log.New(os.Stdout, url+": ", 0),
+		Debug:        log.New(debug_writer, url+": ", 0),
+	}
+}
+
+func (s *Scraper) DoRequest(req ScraperRequest) {
+	if s.seen[req.Url] {
 		return
 	}
-	s.seen[url] = true
+	s.seen[req.Url] = true
 	s.wg.Add(1)
+	var route *Route
 
-	sr := ScraperRequest{
-		Url:     url,
-		Action:  nil,
-		scraper: s,
-	}
-
-	for _, r := range s.routes {
-		if r.Selector.Test(url) {
-			sr.Debug("Found a route")
-			sr.Action = r.Action
+	for r := range s.routes {
+		if s.routes[r].Selector.Test(req.Url) {
+			req.Debug.Println("Found a route")
+			route = &s.routes[r]
 			break
 		}
 	}
 
-	if sr.Action != nil {
+	if route != nil {
 		go func() {
 			defer s.wg.Done()
 
-			resp, err := http.Get(url)
+			resp, err := http.Get(req.Url)
 			if err != nil {
-				sr.Remark(err.Error())
+				req.Debug.Println(err.Error())
 				return
 			}
 			doc, err := html.Parse(resp.Body)
 			if err != nil {
-				sr.Remark(err.Error())
+				req.Debug.Println(err.Error())
 				return
 			}
 
-			sr.Action.Run(sr, doc)
+			route.Action.Run(req, doc)
 		}()
 	} else {
-		sr.Debug("No route found")
+		req.Debug.Println("No route found")
 		s.wg.Done()
 	}
 }
