@@ -74,7 +74,7 @@ func (s *Scraper) DoRequest(req ScraperRequest) {
 	var route *Route
 
 	for r := range s.routes {
-		if s.routes[r].Selector.Test(req.Url) {
+		if s.routes[r].Selector(req.Url) {
 			req.Debug.Println("Found a route")
 			route = &s.routes[r]
 			break
