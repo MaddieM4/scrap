@@ -1,7 +1,5 @@
 package scrap
 
-import "code.google.com/p/go.net/html"
-
 type Route struct {
 	Selector StringTest
 	Action   RouteAction
@@ -9,5 +7,5 @@ type Route struct {
 
 // Run for each parsed page
 type RouteAction interface {
-	Run(req ScraperRequest, root *html.Node)
+	Run(req ScraperRequest, root Node)
 }

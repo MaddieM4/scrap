@@ -1,18 +1,17 @@
 package scrap
 
 import (
-	"code.google.com/p/go.net/html"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"sync"
 )
 
 type Scraper struct {
 	StartingUrl string
+	Retriever   Retriever
 	Debug       bool
 
 	routes  []Route
@@ -85,12 +84,7 @@ func (s *Scraper) DoRequest(req ScraperRequest) {
 		go func() {
 			defer s.wg.Done()
 
-			resp, err := http.Get(req.Url)
-			if err != nil {
-				req.Debug.Println(err.Error())
-				return
-			}
-			doc, err := html.Parse(resp.Body)
+			doc, err := s.Retriever(req)
 			if err != nil {
 				req.Debug.Println(err.Error())
 				return
