@@ -6,6 +6,4 @@ type Route struct {
 }
 
 // Run for each parsed page
-type RouteAction interface {
-	Run(req ScraperRequest, root Node)
-}
+type RouteAction func(req ScraperRequest, root Node)

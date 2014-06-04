@@ -90,7 +90,7 @@ func (s *Scraper) DoRequest(req ScraperRequest) {
 				return
 			}
 
-			route.Action.Run(req, doc)
+			route.Action(req, doc)
 		}()
 	} else {
 		req.Debug.Println("No route found")
