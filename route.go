@@ -5,5 +5,46 @@ type Route struct {
 	Action   RouteAction
 }
 
+func (r Route) Matches(url string) bool {
+	return r.Selector(url)
+}
+
 // Run for each parsed page
 type RouteAction func(req ScraperRequest, root Node)
+
+type RouteSet struct {
+	Routes []Route
+}
+
+func NewRouteSet() *RouteSet {
+	return &RouteSet{
+		make([]Route, 0),
+	}
+}
+
+func (rs *RouteSet) Append(r Route) {
+	rs.Routes = append(rs.Routes, r)
+}
+
+func (rs *RouteSet) AppendExact(url string, action RouteAction) {
+	rs.Append(Route{
+		Selector: StringTestExact(url),
+		Action:   action,
+	})
+}
+
+func (rs *RouteSet) AppendPrefix(prefix string, action RouteAction) {
+	rs.Append(Route{
+		Selector: StringTestPrefix(prefix),
+		Action:   action,
+	})
+}
+
+func (rs *RouteSet) MatchUrl(url string) (Route, bool) {
+	for _, r := range rs.Routes {
+		if r.Matches(url) {
+			return r, true
+		}
+	}
+	return Route{}, false
+}
