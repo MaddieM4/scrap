@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// In a production environment, you will always use HttpRetriever.
 type Retriever func(ScraperRequest) (Node, error)
 
 func parseReader(req ScraperRequest, r io.Reader) (Node, error) {

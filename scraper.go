@@ -33,6 +33,7 @@ type Scraper struct {
 	wg     *sync.WaitGroup
 }
 
+// May return an error if config validation fails.
 func NewScraper(config ScraperConfig) (Scraper, error) {
 	err := config.Validate()
 	if err != nil {
@@ -46,6 +47,7 @@ func NewScraper(config ScraperConfig) (Scraper, error) {
 	}, nil
 }
 
+// Creates a new ScraperRequest with its properties all initialized.
 func (s *Scraper) CreateRequest(url string) ScraperRequest {
 	return ScraperRequest{
 		Url:          url,
@@ -55,6 +57,7 @@ func (s *Scraper) CreateRequest(url string) ScraperRequest {
 	}
 }
 
+// Scrape a URL based on the given ScraperRequest.
 func (s *Scraper) DoRequest(req ScraperRequest) {
 	if s.seen[req.Url] {
 		return
@@ -70,6 +73,10 @@ func (s *Scraper) DoRequest(req ScraperRequest) {
 	}
 }
 
+// Wait for all outstanding queued items to finish. You almost always
+// want to do this, so that your main function doesn't end (thus ending
+// the entire process) while you still have all your goroutines out in
+// limbo.
 func (s *Scraper) Wait() {
 	s.wg.Wait()
 }

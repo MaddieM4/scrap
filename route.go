@@ -2,11 +2,18 @@ package scrap
 
 import "sync"
 
+// A binding between a URL-matching function, and an action to perform
+// on pages where the URL matches.
+//
+// You always want to set up your Routes before starting to scrape, or
+// else none of the scraped pages will match.
 type Route struct {
 	Selector StringTest
 	Action   RouteAction
 }
 
+// Does the given url match this Route? Used by the Scraper to select
+// the first matching Route.
 func (r Route) Matches(url string) bool {
 	return r.Selector(url)
 }
@@ -29,9 +36,10 @@ func (r Route) Run(req ScraperRequest, ret Retriever, wg *sync.WaitGroup) {
 	}()
 }
 
-// Run for each parsed page
+// Callback that's run for each parsed page.
 type RouteAction func(req ScraperRequest, root Node)
 
+// A slice of Routes. Order is important!
 type RouteSet struct {
 	Routes []Route
 }
@@ -42,10 +50,13 @@ func NewRouteSet() *RouteSet {
 	}
 }
 
+// Add a new Route at the end of the set.
 func (rs *RouteSet) Append(r Route) {
 	rs.Routes = append(rs.Routes, r)
 }
 
+// Shorthand to add a new Route at the end of the set, where exact
+// URL matching is used (see StringTestExact).
 func (rs *RouteSet) AppendExact(url string, action RouteAction) {
 	rs.Append(Route{
 		Selector: StringTestExact(url),
@@ -53,6 +64,8 @@ func (rs *RouteSet) AppendExact(url string, action RouteAction) {
 	})
 }
 
+// Shorthand to add a new Route at the end of the set, where prefix
+// URL matching is used (see StringTestPrefix).
 func (rs *RouteSet) AppendPrefix(prefix string, action RouteAction) {
 	rs.Append(Route{
 		Selector: StringTestPrefix(prefix),
@@ -60,6 +73,8 @@ func (rs *RouteSet) AppendPrefix(prefix string, action RouteAction) {
 	})
 }
 
+// Return the first Route where the URL matches according to the
+// Route's matching function. Order is important!
 func (rs *RouteSet) MatchUrl(url string) (Route, bool) {
 	for _, r := range rs.Routes {
 		if r.Matches(url) {
