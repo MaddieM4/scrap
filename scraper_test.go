@@ -165,3 +165,28 @@ func TestScraper_DoRequest_Seen(t *testing.T) {
 		debug.String(),
 	)
 }
+
+func TestScraper_Scrape(t *testing.T) {
+	var remarks, debug bytes.Buffer
+	config := ScraperConfig{
+		Retriever: testHtmlRetriever,
+		Remarks:   &remarks,
+		Debug:     &debug,
+	}
+	s, err := NewScraper(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.Routes.AppendPrefix("/", func(req ScraperRequest, root Node) {
+		req.Remarks.Printf("%d <a> elements\n", len(root.Find("a")))
+		req.QueueAnother("/second")
+	})
+
+	s.Scrape("/")
+	s.Wait()
+
+	compare(t,
+		"/: 3 <a> elements\n/second: 3 <a> elements\n",
+		remarks.String(),
+	)
+}

@@ -73,3 +73,8 @@ func (s *Scraper) DoRequest(req ScraperRequest) {
 func (s *Scraper) Wait() {
 	s.wg.Wait()
 }
+
+// Convenience function to create and queue a new request.
+func (s *Scraper) Scrape(url string) {
+	s.DoRequest(s.CreateRequest(url))
+}
