@@ -106,3 +106,62 @@ func TestScraper_CreateRequest(t *testing.T) {
 	compare(t, "/: This is a remark\n", remarks.String())
 	compare(t, "/: This is a debug note\n", debug.String())
 }
+
+func TestScraper_DoRequest_NoRoute(t *testing.T) {
+	var remarks, debug bytes.Buffer
+	config := ScraperConfig{
+		Retriever: testHtmlRetriever,
+		Remarks:   &remarks,
+		Debug:     &debug,
+	}
+	s, err := NewScraper(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := s.CreateRequest("/")
+	s.DoRequest(req)
+
+	compare(t, "", remarks.String())
+	compare(t, "/: No route found\n", debug.String())
+}
+
+func TestScraper_DoRequest_Seen(t *testing.T) {
+	var remarks, debug bytes.Buffer
+	config := ScraperConfig{
+		Retriever: testHtmlRetriever,
+		Remarks:   &remarks,
+		Debug:     &debug,
+	}
+	s, err := NewScraper(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.Routes.AppendPrefix("/", func(req ScraperRequest, root Node) {
+		req.Remarks.Printf("%d <a> elements\n", len(root.Find("a")))
+	})
+
+	req := s.CreateRequest("/")
+	s.DoRequest(req)
+	s.DoRequest(req) // Same request again
+	s.Wait()
+
+	// Only one instance of this element being run
+	compare(t, "/: 3 <a> elements\n", remarks.String())
+	compare(t, "/: Found a route\n", debug.String())
+
+	// Different request
+	req = s.CreateRequest("/different")
+	s.DoRequest(req)
+	s.Wait()
+
+	// Each unique request was run exactly once
+	compare(t,
+		"/: 3 <a> elements\n/different: 3 <a> elements\n",
+		remarks.String(),
+	)
+	compare(t,
+		"/: Found a route\n/different: Found a route\n",
+		debug.String(),
+	)
+}

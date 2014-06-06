@@ -8,10 +8,9 @@ import (
 )
 
 type ScraperConfig struct {
-	StartingUrl string
-	Retriever   Retriever
-	Remarks     io.Writer
-	Debug       io.Writer
+	Retriever Retriever
+	Remarks   io.Writer
+	Debug     io.Writer
 }
 
 func (sc ScraperConfig) Validate() error {
@@ -47,11 +46,6 @@ func NewScraper(config ScraperConfig) (Scraper, error) {
 	}, nil
 }
 
-func (s *Scraper) Run() {
-	s.DoRequest(s.CreateRequest(s.config.StartingUrl))
-	s.wg.Wait()
-}
-
 func (s *Scraper) CreateRequest(url string) ScraperRequest {
 	return ScraperRequest{
 		Url:          url,
@@ -74,4 +68,8 @@ func (s *Scraper) DoRequest(req ScraperRequest) {
 	} else {
 		req.Debug.Println("No route found")
 	}
+}
+
+func (s *Scraper) Wait() {
+	s.wg.Wait()
 }
