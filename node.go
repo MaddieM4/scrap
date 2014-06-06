@@ -6,7 +6,7 @@ import (
 	//"net/url"
 )
 
-// Wrapper for html.node with selector capabilities.
+// Wrapper for html.Node with selector capabilities.
 type Node struct {
 	*html.Node
 	req *ScraperRequest
