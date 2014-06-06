@@ -66,24 +66,12 @@ func (s *Scraper) DoRequest(req ScraperRequest) {
 		return
 	}
 	s.seen[req.Url] = true
-	s.wg.Add(1)
 
 	route, ok := s.Routes.MatchUrl(req.Url)
 	if ok {
 		req.Debug.Println("Found a route")
-		go func() {
-			defer s.wg.Done()
-
-			doc, err := s.config.Retriever(req)
-			if err != nil {
-				req.Debug.Println(err.Error())
-				return
-			}
-
-			route.Action(req, doc)
-		}()
+		route.Run(req, s.config.Retriever, s.wg)
 	} else {
 		req.Debug.Println("No route found")
-		s.wg.Done()
 	}
 }

@@ -49,6 +49,12 @@ func (trq *TestRQ) DoRequest(req ScraperRequest) {
 	trq.Queued = append(trq.Queued, req)
 }
 
+func testHtmlRetriever(req ScraperRequest) (Node, error) {
+	data := new(bytes.Buffer)
+	data.WriteString(sample_html)
+	return parseReader(req, data)
+}
+
 func compare(t *testing.T, expected, got interface{}) {
 	if !reflect.DeepEqual(expected, got) {
 		t.Fatalf("Expected %#v, got %#v", expected, got)

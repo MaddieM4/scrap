@@ -1,5 +1,7 @@
 package scrap
 
+import "sync"
+
 type Route struct {
 	Selector StringTest
 	Action   RouteAction
@@ -7,6 +9,24 @@ type Route struct {
 
 func (r Route) Matches(url string) bool {
 	return r.Selector(url)
+}
+
+// Runs r.Action in a goroutine, subscribing it on the WaitGroup
+func (r Route) Run(req ScraperRequest, ret Retriever, wg *sync.WaitGroup) {
+	n, err := ret(req)
+	if err != nil {
+		req.Debug.Println(err.Error())
+		return
+	}
+
+	// Add to wg in calling goroutine
+	wg.Add(1)
+
+	// Decrement wg in spawned goroutine, after performing action
+	go func() {
+		defer wg.Done()
+		r.Action(req, n)
+	}()
 }
 
 // Run for each parsed page
