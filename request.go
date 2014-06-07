@@ -3,6 +3,7 @@ package scrap
 import (
 	"log"
 	"net/url"
+	"time"
 )
 
 // Represents a single request.
@@ -13,6 +14,11 @@ type ScraperRequest struct {
 	RequestQueue SRQueuer
 	Remarks      *log.Logger
 	Debug        *log.Logger
+	Stats        *RequestStats
+}
+
+type RequestStats struct {
+	Duration time.Duration
 }
 
 // De-relativize a URL based on the existing request's URL.

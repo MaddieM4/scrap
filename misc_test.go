@@ -43,6 +43,7 @@ func (trq *TestRQ) CreateRequest(url string) ScraperRequest {
 		RequestQueue: trq,
 		Remarks:      log.New(trq.Remarks, url+": ", 0),
 		Debug:        log.New(trq.Debug, url+": ", 0),
+		Stats:        new(RequestStats),
 	}
 }
 func (trq *TestRQ) DoRequest(req ScraperRequest) {

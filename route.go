@@ -1,6 +1,9 @@
 package scrap
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // A binding between a URL-matching function, and an action to perform
 // on pages where the URL matches.
@@ -20,7 +23,10 @@ func (r Route) Matches(url string) bool {
 
 // Runs r.Action in a goroutine, subscribing it on the WaitGroup
 func (r Route) Run(req ScraperRequest, ret Retriever, wg *sync.WaitGroup) {
+	start_time := time.Now()
 	n, err := ret(req)
+	req.Stats.Duration = time.Since(start_time)
+
 	if err != nil {
 		req.Debug.Println(err.Error())
 		return

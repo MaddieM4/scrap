@@ -54,6 +54,10 @@ func TestRoute_Run(t *testing.T) {
 
 	compare(t, req.Url+": Was called\n", trq.Remarks.String())
 	compare(t, req.Url+": 3 <a> elements\n", trq.Debug.String())
+
+	if req.Stats.Duration == 0 {
+		t.Fatal("req.Stats.Duration was not set")
+	}
 }
 
 func TestRoute_Run_RetrieverError(t *testing.T) {
@@ -69,6 +73,10 @@ func TestRoute_Run_RetrieverError(t *testing.T) {
 
 	// And does not block wg
 	wg.Wait()
+
+	if req.Stats.Duration == 0 {
+		t.Fatal("req.Stats.Duration was not set")
+	}
 }
 
 func TestRouteSet_Append(t *testing.T) {
