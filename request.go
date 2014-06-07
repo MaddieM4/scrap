@@ -17,6 +17,8 @@ type ScraperRequest struct {
 	Stats        *RequestStats
 }
 
+// Some statistics on the completed request, for example, the time
+// required to retrieve the file from the network.
 type RequestStats struct {
 	Duration time.Duration
 }
