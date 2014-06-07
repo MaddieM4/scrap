@@ -36,6 +36,7 @@ func TestScraperConfig_Validate(t *testing.T) {
 		sc_valid_test{
 			ScraperConfig{
 				Retriever: dummyRetriever,
+				Bucket:    NewCountBucket(1),
 				Remarks:   &remarks,
 				Debug:     &debug,
 			},
@@ -44,6 +45,7 @@ func TestScraperConfig_Validate(t *testing.T) {
 		sc_valid_test{
 			ScraperConfig{
 				Retriever: nil,
+				Bucket:    NewCountBucket(1),
 				Remarks:   &remarks,
 				Debug:     &debug,
 			},
@@ -52,6 +54,16 @@ func TestScraperConfig_Validate(t *testing.T) {
 		sc_valid_test{
 			ScraperConfig{
 				Retriever: dummyRetriever,
+				Bucket:    nil,
+				Remarks:   &remarks,
+				Debug:     &debug,
+			},
+			"ScraperConfig not valid if Bucket == nil",
+		},
+		sc_valid_test{
+			ScraperConfig{
+				Retriever: dummyRetriever,
+				Bucket:    NewCountBucket(1),
 				Remarks:   nil,
 				Debug:     &debug,
 			},
@@ -60,6 +72,7 @@ func TestScraperConfig_Validate(t *testing.T) {
 		sc_valid_test{
 			ScraperConfig{
 				Retriever: dummyRetriever,
+				Bucket:    NewCountBucket(1),
 				Remarks:   &remarks,
 				Debug:     nil,
 			},
@@ -84,6 +97,7 @@ func TestScraper_CreateRequest(t *testing.T) {
 	var remarks, debug bytes.Buffer
 	config := ScraperConfig{
 		Retriever: dummyRetriever,
+		Bucket:    NewCountBucket(1),
 		Remarks:   &remarks,
 		Debug:     &debug,
 	}
@@ -111,6 +125,7 @@ func TestScraper_DoRequest_NoRoute(t *testing.T) {
 	var remarks, debug bytes.Buffer
 	config := ScraperConfig{
 		Retriever: testHtmlRetriever,
+		Bucket:    NewCountBucket(1),
 		Remarks:   &remarks,
 		Debug:     &debug,
 	}
@@ -130,6 +145,7 @@ func TestScraper_DoRequest_Seen(t *testing.T) {
 	var remarks, debug bytes.Buffer
 	config := ScraperConfig{
 		Retriever: testHtmlRetriever,
+		Bucket:    NewCountBucket(1),
 		Remarks:   &remarks,
 		Debug:     &debug,
 	}
@@ -166,10 +182,42 @@ func TestScraper_DoRequest_Seen(t *testing.T) {
 	)
 }
 
+// The "Seen" test covers basic usage. Let's make sure we're actually
+// using the bucket, though, instead of an internal counter.
+func TestScraper_UsesBucket(t *testing.T) {
+	var remarks, debug bytes.Buffer
+	max_hits := 5
+	config := ScraperConfig{
+		Retriever: testHtmlRetriever,
+		Bucket:    NewCountBucket(max_hits),
+		Remarks:   &remarks,
+		Debug:     &debug,
+	}
+	s, err := NewScraper(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.Routes.AppendExact("/", func(req ScraperRequest, root Node) {
+		req.QueueAnother("/") // Keeps queueing itself
+	})
+
+	var expected_debug string
+	each_line := "/: Found a route\n"
+	for i := 0; i < max_hits; i++ {
+		expected_debug = expected_debug + each_line
+	}
+
+	s.Scrape("/")
+	s.Wait()
+
+	compare(t, expected_debug, debug.String())
+}
+
 func TestScraper_Scrape(t *testing.T) {
 	var remarks, debug bytes.Buffer
 	config := ScraperConfig{
 		Retriever: testHtmlRetriever,
+		Bucket:    NewCountBucket(1),
 		Remarks:   &remarks,
 		Debug:     &debug,
 	}

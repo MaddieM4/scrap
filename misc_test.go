@@ -61,3 +61,9 @@ func compare(t *testing.T, expected, got interface{}) {
 		t.Fatalf("Expected %#v, got %#v", expected, got)
 	}
 }
+func comparem(t *testing.T, expected, got interface{}, m string) {
+	if !reflect.DeepEqual(expected, got) {
+		t.Log(m)
+		t.Fatalf("Expected %#v, got %#v", expected, got)
+	}
+}

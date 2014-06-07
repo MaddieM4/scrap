@@ -9,6 +9,7 @@ func Example() {
 	s, err := NewScraper(ScraperConfig{
 		// Real code would use HttpRetriever as the Retriever.
 		Retriever: testHtmlRetriever,
+		Bucket:    NewCountBucket(1),
 		Remarks:   os.Stdout,
 		Debug:     os.Stdout,
 	})

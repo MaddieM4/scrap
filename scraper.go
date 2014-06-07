@@ -9,6 +9,7 @@ import (
 
 type ScraperConfig struct {
 	Retriever Retriever
+	Bucket    Bucket
 	Remarks   io.Writer
 	Debug     io.Writer
 }
@@ -16,6 +17,9 @@ type ScraperConfig struct {
 func (sc ScraperConfig) Validate() error {
 	if sc.Retriever == nil {
 		return errors.New("ScraperConfig not valid if Retriever == nil")
+	}
+	if sc.Bucket == nil {
+		return errors.New("ScraperConfig not valid if Bucket == nil")
 	}
 	if sc.Remarks == nil {
 		return errors.New("ScraperConfig not valid if Remarks == nil")
@@ -29,7 +33,6 @@ func (sc ScraperConfig) Validate() error {
 type Scraper struct {
 	config ScraperConfig
 	Routes *RouteSet
-	seen   map[string]bool
 	wg     *sync.WaitGroup
 }
 
@@ -42,7 +45,6 @@ func NewScraper(config ScraperConfig) (Scraper, error) {
 	return Scraper{
 		config: config,
 		Routes: NewRouteSet(),
-		seen:   make(map[string]bool),
 		wg:     new(sync.WaitGroup),
 	}, nil
 }
@@ -60,10 +62,9 @@ func (s *Scraper) CreateRequest(url string) ScraperRequest {
 
 // Scrape a URL based on the given ScraperRequest.
 func (s *Scraper) DoRequest(req ScraperRequest) {
-	if s.seen[req.Url] {
+	if !s.config.Bucket.Check(req.Url) {
 		return
 	}
-	s.seen[req.Url] = true
 
 	route, ok := s.Routes.MatchUrl(req.Url)
 	if ok {
