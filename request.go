@@ -14,6 +14,7 @@ type ScraperRequest struct {
 	RequestQueue SRQueuer
 	Remarks      *log.Logger
 	Debug        *log.Logger
+	Context      RequestContext
 	Stats        *RequestStats
 }
 
@@ -21,6 +22,13 @@ type ScraperRequest struct {
 // required to retrieve the file from the network.
 type RequestStats struct {
 	Duration time.Duration
+}
+
+// Used to convey information about the page and context where this
+// request was queued. This can be useful for complex bucketing, or
+// simply tracking down which pages are referring to 404 links.
+type RequestContext struct {
+	Referer string
 }
 
 // De-relativize a URL based on the existing request's URL.
@@ -56,5 +64,6 @@ func (sr ScraperRequest) QueueAnother(queue_url string) {
 		return
 	}
 	new_req := sr.RequestQueue.CreateRequest(abs_url)
+	new_req.Context.Referer = sr.Url
 	sr.RequestQueue.DoRequest(new_req)
 }

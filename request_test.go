@@ -98,7 +98,10 @@ func TestSR_QueueAnother(t *testing.T) {
 	if len(trq.Queued) != 1 {
 		t.Fatalf("Should have queued one item - %d queued", len(trq.Queued))
 	}
-	compare(t, "http://hostname/sauce", trq.Queued[0].Url)
+
+	queued := trq.Queued[0]
+	compare(t, "http://hostname/sauce", queued.Url)
+	compare(t, "http://hostname/pasta", queued.Context.Referer)
 	compare(t, "", trq.Debug.String())
 }
 
