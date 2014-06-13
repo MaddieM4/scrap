@@ -1,6 +1,8 @@
 package scrap
 
 import (
+	"errors"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -44,5 +46,69 @@ func TestServerResponse_Parse(t *testing.T) {
 
 	if len(node.Find("a")) != 3 {
 		t.Fatal("Parsed HTML is wonky or blank")
+	}
+}
+
+type BrokenReader struct{}
+
+func (br BrokenReader) Read([]byte) (int, error) {
+	return 0, errors.New("BrokenReader says hello")
+}
+func (br BrokenReader) Close() error {
+	return nil
+}
+func BrokenRetriever(req ScraperRequest) (*http.Response, error) {
+	var resp http.Response
+	resp.Body = BrokenReader{}
+	return &resp, nil
+}
+
+func TestServerResponse_Parse_BrokenReader(t *testing.T) {
+	url := "http://no.such.host/"
+	trq := NewTestRQ()
+	req := trq.CreateRequest(url)
+	ret := BrokenRetriever
+
+	resp, err := GetResponse(req, ret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = resp.Parse()
+	if err == nil {
+		t.Fatal("Should have failed - broken reader")
+	}
+}
+
+func NilRetriever(req ScraperRequest) (*http.Response, error) {
+	return nil, nil
+}
+func TestServerResponse_Parse_NilResponse(t *testing.T) {
+	url := "http://no.such.host/"
+	trq := NewTestRQ()
+	req := trq.CreateRequest(url)
+	ret := NilRetriever
+
+	resp, err := GetResponse(req, ret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = resp.Parse()
+	if err == nil {
+		t.Fatal("Should have failed - nil response")
+	}
+}
+
+func ErrorRetriever(req ScraperRequest) (*http.Response, error) {
+	return nil, errors.New("Awww fudge")
+}
+func TestServerResponse_Parse_ErrorRetriever(t *testing.T) {
+	url := "http://no.such.host/"
+	trq := NewTestRQ()
+	req := trq.CreateRequest(url)
+	ret := ErrorRetriever
+
+	_, err := GetResponse(req, ret)
+	if err == nil {
+		t.Fatal("Should have failed - ret returns error")
 	}
 }

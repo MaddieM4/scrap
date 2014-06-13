@@ -1,29 +1,11 @@
 package scrap
 
 import (
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
-
-type BrokenReader struct{}
-
-func (br BrokenReader) Read([]byte) (int, error) {
-	return 0, errors.New("BrokenReader says hello")
-}
-
-/*
-func TestParseReader(t *testing.T) {
-	// Success case is verified by other tests, just test error
-	_, err := parseReader(ScraperRequest{}, BrokenReader{})
-	if err == nil {
-		t.Fatal("Should not have suceeded")
-	}
-	compare(t, "BrokenReader says hello", err.Error())
-}
-*/
 
 func setupHttpServer(t *testing.T, data []byte) *httptest.Server {
 	var handler func(w http.ResponseWriter, r *http.Request)
