@@ -1,9 +1,6 @@
 package scrap
 
-import (
-	"sync"
-	"time"
-)
+import "sync"
 
 // A binding between a URL-matching function, and an action to perform
 // on pages where the URL matches.
@@ -23,10 +20,7 @@ func (r Route) Matches(url string) bool {
 
 // Runs r.Action in a goroutine, subscribing it on the WaitGroup
 func (r Route) Run(req ScraperRequest, ret Retriever, wg *sync.WaitGroup) {
-	start_time := time.Now()
-	n, err := ret(req)
-	req.Stats.Duration = time.Since(start_time)
-
+	resp, err := GetResponse(req, ret)
 	if err != nil {
 		req.Debug.Println(err.Error())
 		return
@@ -38,12 +32,12 @@ func (r Route) Run(req ScraperRequest, ret Retriever, wg *sync.WaitGroup) {
 	// Decrement wg in spawned goroutine, after performing action
 	go func() {
 		defer wg.Done()
-		r.Action(req, n)
+		r.Action(req, resp)
 	}()
 }
 
 // Callback that's run for each parsed page.
-type RouteAction func(req ScraperRequest, root Node)
+type RouteAction func(req ScraperRequest, resp ServerResponse)
 
 // A slice of Routes. Order is important!
 type RouteSet struct {

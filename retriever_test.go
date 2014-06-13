@@ -2,6 +2,7 @@ package scrap
 
 import (
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,6 +14,7 @@ func (br BrokenReader) Read([]byte) (int, error) {
 	return 0, errors.New("BrokenReader says hello")
 }
 
+/*
 func TestParseReader(t *testing.T) {
 	// Success case is verified by other tests, just test error
 	_, err := parseReader(ScraperRequest{}, BrokenReader{})
@@ -21,6 +23,7 @@ func TestParseReader(t *testing.T) {
 	}
 	compare(t, "BrokenReader says hello", err.Error())
 }
+*/
 
 func setupHttpServer(t *testing.T, data []byte) *httptest.Server {
 	var handler func(w http.ResponseWriter, r *http.Request)
@@ -54,11 +57,16 @@ func TestHttpRetriever(t *testing.T) {
 	req := trq.CreateRequest(ts.URL)
 
 	t.Logf("Requesting: %s", ts.URL)
-	n, err := HttpRetriever(req)
+	resp, err := HttpRetriever(req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	compare(t, 3, len(n.Find("a")))
+
+	got_response, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	compare(t, []byte(sample_html), got_response)
 }
 
 func TestHttpRetriever_NoServer(t *testing.T) {
@@ -81,8 +89,9 @@ func TestHttpRetriever_ErrorCode(t *testing.T) {
 	req := trq.CreateRequest(url)
 
 	t.Logf("Requesting: %s", url)
-	_, err := HttpRetriever(req)
-	if err == nil {
-		t.Fatal("Should have failed, didn't")
+	resp, err := HttpRetriever(req)
+	if err != nil {
+		t.Fatal(err)
 	}
+	compare(t, 404, resp.StatusCode)
 }

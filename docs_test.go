@@ -19,7 +19,10 @@ func Example() {
 	}
 
 	base_url := "http://www.example.com/"
-	s.Routes.AppendPrefix(base_url, func(req ScraperRequest, root Node) {
+	s.Routes.AppendPrefix(base_url, func(req ScraperRequest, resp ServerResponse) {
+		// Get HTML tree
+		root, _ := resp.Parse()
+
 		// Verify that there is only one <head> element
 		num_heads := len(root.Find("head"))
 		if num_heads != 1 {

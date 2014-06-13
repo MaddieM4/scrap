@@ -2,11 +2,12 @@ package scrap
 
 import (
 	"bytes"
+	"net/http"
 	"testing"
 )
 
-func dummyRetriever(ScraperRequest) (Node, error) {
-	return Node{}, nil
+func dummyRetriever(ScraperRequest) (*http.Response, error) {
+	return nil, nil
 }
 
 type sc_valid_test struct {
@@ -153,7 +154,8 @@ func TestScraper_DoRequest_Seen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.Routes.AppendPrefix("/", func(req ScraperRequest, root Node) {
+	s.Routes.AppendPrefix("/", func(req ScraperRequest, resp ServerResponse) {
+		root, _ := resp.Parse()
 		req.Remarks.Printf("%d <a> elements\n", len(root.Find("a")))
 	})
 
@@ -197,7 +199,7 @@ func TestScraper_UsesBucket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.Routes.AppendExact("/", func(req ScraperRequest, root Node) {
+	s.Routes.AppendExact("/", func(req ScraperRequest, resp ServerResponse) {
 		req.QueueAnother("/") // Keeps queueing itself
 	})
 
@@ -225,7 +227,8 @@ func TestScraper_Scrape(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.Routes.AppendPrefix("/", func(req ScraperRequest, root Node) {
+	s.Routes.AppendPrefix("/", func(req ScraperRequest, resp ServerResponse) {
+		root, _ := resp.Parse()
 		req.Remarks.Printf("%d <a> elements\n", len(root.Find("a")))
 		req.QueueAnother("/second")
 	})

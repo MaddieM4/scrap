@@ -2,7 +2,9 @@ package scrap
 
 import (
 	"bytes"
+	"io"
 	"log"
+	"net/http"
 	"reflect"
 	"testing"
 )
@@ -50,10 +52,22 @@ func (trq *TestRQ) DoRequest(req ScraperRequest) {
 	trq.Queued = append(trq.Queued, req)
 }
 
-func testHtmlRetriever(req ScraperRequest) (Node, error) {
+type nopCloser struct {
+	io.Reader
+}
+
+func (nopCloser) Close() error {
+	// Nothing to do, not real IO
+	return nil
+}
+
+func testHtmlRetriever(req ScraperRequest) (*http.Response, error) {
 	data := new(bytes.Buffer)
 	data.WriteString(sample_html)
-	return parseReader(req, data)
+	resp := http.Response{
+		Body: nopCloser{data},
+	}
+	return &resp, nil
 }
 
 func compare(t *testing.T, expected, got interface{}) {
