@@ -3,7 +3,6 @@ package scrap
 import (
 	"log"
 	"net/url"
-	"time"
 )
 
 // Represents a single request.
@@ -15,13 +14,6 @@ type ScraperRequest struct {
 	Remarks      *log.Logger
 	Debug        *log.Logger
 	Context      RequestContext
-	Stats        *RequestStats
-}
-
-// Some statistics on the completed request, for example, the time
-// required to retrieve the file from the network.
-type RequestStats struct {
-	Duration time.Duration
 }
 
 // Used to convey information about the page and context where this

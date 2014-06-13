@@ -56,7 +56,6 @@ func (s *Scraper) CreateRequest(url string) ScraperRequest {
 		RequestQueue: s,
 		Remarks:      log.New(s.config.Remarks, url+": ", 0),
 		Debug:        log.New(s.config.Debug, url+": ", 0),
-		Stats:        new(RequestStats),
 	}
 }
 
