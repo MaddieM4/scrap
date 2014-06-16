@@ -7,11 +7,17 @@ import (
 	"sync"
 )
 
+type RequestAuth struct {
+	Username string
+	Password string
+}
+
 type ScraperConfig struct {
 	Retriever Retriever
 	Bucket    Bucket
 	Remarks   io.Writer
 	Debug     io.Writer
+	Auth      *RequestAuth
 }
 
 func (sc ScraperConfig) Validate() error {

@@ -31,6 +31,15 @@ func setupHttpServer(t *testing.T, data []byte) *httptest.Server {
 	return ts
 }
 
+func serverAuth(w http.ResponseWriter, r *http.Request) {
+	auth := r.Header.Get("Authorization")
+	if auth == "" {
+		w.Write([]byte("No auth"))
+	} else {
+		w.Write([]byte(auth))
+	}
+}
+
 func TestHttpRetriever(t *testing.T) {
 	ts := setupHttpServer(t, []byte(sample_html))
 	defer ts.Close()
@@ -76,4 +85,33 @@ func TestHttpRetriever_ErrorCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	compare(t, 404, resp.StatusCode)
+}
+
+func TestHttpRetriever_Auth(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(serverAuth))
+	defer ts.Close()
+
+	url := ts.URL
+	trq := NewTestRQ()
+	req := trq.CreateRequest(url)
+
+	getContents := func(req ScraperRequest) string {
+		resp, err := HttpRetriever(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(contents)
+	}
+
+	compare(t, "No auth", getContents(req))
+
+	req.Auth = &RequestAuth{
+		Username: "Flibberty",
+		Password: "Jibbit",
+	}
+	compare(t, "Basic RmxpYmJlcnR5OkppYmJpdA==", getContents(req))
 }

@@ -14,6 +14,7 @@ type ScraperRequest struct {
 	Remarks      *log.Logger
 	Debug        *log.Logger
 	Context      RequestContext
+	Auth         *RequestAuth
 }
 
 // Used to convey information about the page and context where this
