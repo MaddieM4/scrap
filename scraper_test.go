@@ -101,6 +101,7 @@ func TestScraper_CreateRequest(t *testing.T) {
 		Bucket:    NewCountBucket(1),
 		Remarks:   &remarks,
 		Debug:     &debug,
+		Auth:      &RequestAuth{"bad", "wolf"},
 	}
 	s, err := NewScraper(config)
 	if err != nil {
@@ -113,6 +114,9 @@ func TestScraper_CreateRequest(t *testing.T) {
 	}
 	if req.Url != "/" {
 		t.Fatal("Should have set req.Url")
+	}
+	if req.Auth != config.Auth {
+		t.Fatal("Did not pass on Auth")
 	}
 
 	req.Remarks.Println("This is a remark")

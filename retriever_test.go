@@ -87,6 +87,16 @@ func TestHttpRetriever_ErrorCode(t *testing.T) {
 	compare(t, 404, resp.StatusCode)
 }
 
+func TestHttpRetriever_BadUrl(t *testing.T) {
+	url := "%"
+	trq := NewTestRQ()
+	req := trq.CreateRequest(url)
+
+	if _, err := HttpRetriever(req); err == nil {
+		t.Fatal("Should have failed with bad URL")
+	}
+}
+
 func TestHttpRetriever_Auth(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(serverAuth))
 	defer ts.Close()
