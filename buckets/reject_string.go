@@ -13,3 +13,9 @@ type RejectExactBucket string
 func (b RejectExactBucket) Check(url string) bool {
 	return url != string(b)
 }
+
+type RejectContainsBucket string
+
+func (b RejectContainsBucket) Check(url string) bool {
+	return strings.Index(url, string(b)) == -1 // No match
+}

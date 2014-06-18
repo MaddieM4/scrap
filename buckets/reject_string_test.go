@@ -22,3 +22,16 @@ func TestRejectExactBucket(t *testing.T) {
 	}
 	tests.Run(t, b)
 }
+
+func TestRejectContainsBucket(t *testing.T) {
+	b := RejectContainsBucket("abc")
+	tests := bt_slice{
+		bt{"abc", false, "URL is exact match"},
+		bt{"abc123", false, "URL has prefix"},
+		bt{"123abc", false, "URL has postfix"},
+		bt{"123abc456", false, "URL has match in the middle"},
+		bt{"123ab456", true, "Not quite a match"},
+		bt{"bac", true, "All scrambled"},
+	}
+	tests.Run(t, b)
+}
