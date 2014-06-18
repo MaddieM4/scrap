@@ -12,3 +12,13 @@ func TestRejectPrefixBucket(t *testing.T) {
 	}
 	tests.Run(t, b)
 }
+
+func TestRejectExactBucket(t *testing.T) {
+	b := RejectExactBucket("abc")
+	tests := bt_slice{
+		bt{"abc", false, "URL is exact match"},
+		bt{"abc123", true, "URL has prefix"},
+		bt{"123abc", true, "URL has postfix"},
+	}
+	tests.Run(t, b)
+}
