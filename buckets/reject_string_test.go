@@ -35,3 +35,15 @@ func TestRejectContainsBucket(t *testing.T) {
 	}
 	tests.Run(t, b)
 }
+
+func TestRejectSuffixBucket(t *testing.T) {
+	b := RejectSuffixBucket("abc")
+	tests := bt_slice{
+		bt{"abc", false, "URL is just suffix"},
+		bt{"123abc", false, "Ends with suffix"},
+		bt{"abc123", true, "URL has prefix"},
+		bt{"ab", true, "Not all the suffix"},
+		bt{"123abc456", true, "URL has match in the middle"},
+	}
+	tests.Run(t, b)
+}

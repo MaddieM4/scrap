@@ -19,3 +19,9 @@ type RejectContainsBucket string
 func (b RejectContainsBucket) Check(url string) bool {
 	return strings.Index(url, string(b)) == -1 // No match
 }
+
+type RejectSuffixBucket string
+
+func (b RejectSuffixBucket) Check(url string) bool {
+	return !strings.HasSuffix(url, string(b))
+}
