@@ -18,12 +18,11 @@ func TestAllBucket_OneItem(t *testing.T) {
 			scrap.NewCountBucket(1),
 		},
 	}
-	if !b.Check("foo") {
-		t.Fatal("First should succeed")
+	tests := bt_slice{
+		bt{"foo", true, "First should succeed"},
+		bt{"foo", false, "Second should fail"},
 	}
-	if b.Check("foo") {
-		t.Fatal("Second should fail")
-	}
+	tests.Run(t, b)
 }
 
 func TestAllBucket_MultipleItems(t *testing.T) {
@@ -33,20 +32,18 @@ func TestAllBucket_MultipleItems(t *testing.T) {
 			scrap.NewCountBucket(2),
 		},
 	}
-	if !b.Check("foo") {
-		t.Fatal("First should succeed")
+	tests := bt_slice{
+		bt{"foo", true, "First should succeed"},
+		bt{"foo", false, "Second should fail"},
 	}
-	if b.Check("foo") {
-		t.Fatal("Second should fail")
-	}
+	tests.Run(t, b)
 
 	// Adjust the lower MaxHits. Second CountBucket should have one
 	// hit left - then we get falses again.
 	b.Children[0].(*scrap.CountBucket).SetMaxHits(4)
-	if !b.Check("foo") {
-		t.Fatal("Third should succeed")
+	tests = bt_slice{
+		bt{"foo", true, "Third should succeed"},
+		bt{"foo", false, "Fourth should fail"},
 	}
-	if b.Check("foo") {
-		t.Fatal("Fourth should fail")
-	}
+	tests.Run(t, b)
 }

@@ -18,12 +18,11 @@ func TestAnyBucket_OneItem(t *testing.T) {
 			scrap.NewCountBucket(1),
 		},
 	}
-	if !b.Check("foo") {
-		t.Fatal("First should succeed")
+	tests := bt_slice{
+		bt{"foo", true, "First should succeed"},
+		bt{"foo", false, "Second should fail"},
 	}
-	if b.Check("foo") {
-		t.Fatal("Second should fail")
-	}
+	tests.Run(t, b)
 }
 
 func TestAnyBucket_MultipleItems(t *testing.T) {
@@ -33,27 +32,20 @@ func TestAnyBucket_MultipleItems(t *testing.T) {
 			scrap.NewCountBucket(2),
 		},
 	}
-	expected_results := []bool{
-		true, true, true, false, // Exhausts both buckets (2+1)
+	tests := bt_slice{
+		bt{"foo", true, "First bucket says yes"},
+		bt{"foo", true, "First bucket exhausted, second says yes"},
+		bt{"foo", true, "Second bucket says yes for the final time"},
+		bt{"foo", false, "Second bucket exhausted"},
 	}
-	for attempt, expected := range expected_results {
-		got := b.Check("foo")
-		if got != expected {
-			t.Fatalf("Part 1, attempt %d: Expected %v, got %v",
-				attempt, expected, got)
-		}
-	}
+	tests.Run(t, b)
 
 	// Adjust the lower MaxHits. Second CountBucket still exhausted.
 	b.Children[0].(*scrap.CountBucket).SetMaxHits(3)
-	expected_results = []bool{
-		true, true, false, // First bucket has two left now
+	tests = bt_slice{
+		bt{"foo", true, "First bucket says yes"},
+		bt{"foo", true, "First bucket says yes for the final time"},
+		bt{"foo", false, "Both buckets exhausted"},
 	}
-	for attempt, expected := range expected_results {
-		got := b.Check("foo")
-		if got != expected {
-			t.Fatalf("Part 2, attempt %d: Expected %v, got %v",
-				attempt, expected, got)
-		}
-	}
+	tests.Run(t, b)
 }
